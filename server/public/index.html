@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apex Coaching Institute — Portal Gateway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F3EA;
+    --paper-deep:#EFEADB;
+    --line:#DCD4BE;
+    --ink:#1C2B45;
+    --ink-soft:#4A5872;
+    --ink-faint:#8A93A6;
+    --gold:#D89A2E;
+    --gold-deep:#A9701A;
+    --green:#2F6B48;
+    --rust:#B54A34;
+    --white:#FFFFFF;
+    --radius:14px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* subtle paper grain background */
+  body::before{
+    content:'';
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.4;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(28,43,69,0.025) 0 1px, transparent 1px 34px),
+      repeating-linear-gradient(90deg, rgba(28,43,69,0.02) 0 1px, transparent 1px 34px);
+    z-index:0;
+  }
+
+  a{color:inherit; text-decoration:none;}
+  .wrap{max-width:1360px; margin:0 auto; padding:0 32px; position:relative; z-index:1;}
+
+  /* ---------- Hero / Admit-card ---------- */
+  .hero{padding:40px 0 0;}
+  .admit-card{
+    position:relative;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:20px;
+    box-shadow:0 1px 0 rgba(28,43,69,0.03), 0 18px 40px -24px rgba(28,43,69,0.25);
+    overflow:visible;
+  }
+
+  /* stat stub */
+  .stub{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+  }
+  .stat{
+    padding:24px 28px;
+    border-right:1px solid var(--line);
+    text-align:left;
+  }
+  .stat:last-child{border-right:none;}
+  .stat-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600; font-size:24px; color:var(--ink);
+    letter-spacing:-0.01em;
+  }
+  .stat-label{
+    margin-top:4px;
+    font-size:11px; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+
+  /* perforation divider with ticket notches */
+  .perf{
+    position:relative;
+    height:1px;
+    background-image:repeating-linear-gradient(to right, var(--line) 0 7px, transparent 7px 15px);
+  }
+  .perf::before, .perf::after{
+    content:'';
+    position:absolute;
+    top:-13px;
+    width:26px; height:26px;
+    background:var(--paper);
+    border-radius:50%;
+    border:1px solid var(--line);
+  }
+  .perf::before{left:-13px;}
+  .perf::after{right:-13px;}
+
+  .admit-main{
+    padding:44px 44px 40px;
+    text-align:center;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--gold-deep);
+    margin-bottom:14px;
+  }
+  .title{
+    font-family:'IBM Plex Serif', serif;
+    font-weight:600;
+    font-size:clamp(32px, 4.8vw, 50px);
+    line-height:1.08;
+    margin:0 0 12px;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    color:var(--ink-soft);
+    font-size:16.5px;
+    margin:0;
+  }
+
+  /* portal split */
+  .portals{
+    position:relative;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    margin-top:36px;
+  }
+  .portal-perf{
+    position:absolute;
+    top:-2px; bottom:-2px; left:50%;
+    width:1px;
+    background-image:repeating-linear-gradient(to bottom, var(--line) 0 7px, transparent 7px 15px);
+    transform:translateX(-0.5px);
+  }
+  .portal-perf::before, .portal-perf::after{
+    content:'';
+    position:absolute;
+    left:-13px;
+    width:26px; height:26px;
+    background:var(--paper);
+    border-radius:50%;
+    border:1px solid var(--line);
+  }
+  .portal-perf::before{top:-13px;}
+  .portal-perf::after{bottom:-13px;}
+
+  .portal{
+    padding:34px 40px;
+    text-align:left;
+    text-decoration:none;
+    transition:background .18s ease;
+  }
+  .portal:first-child{padding-right:52px; border-bottom-left-radius:20px;}
+  .portal:last-child{padding-left:52px; border-bottom-right-radius:20px;}
+
+  .portal-copy{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase;
+    margin-bottom:12px;
+  }
+  .portal--student .portal-copy{color:var(--gold-deep);}
+  .portal--admin .portal-copy{color:var(--ink-faint);}
+
+  .portal-icon{
+    width:42px; height:42px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:18px;
+  }
+  .portal--student .portal-icon{background:var(--ink); color:var(--gold);}
+  .portal--admin .portal-icon{background:var(--paper-deep); color:var(--ink-soft); border:1px solid var(--line);}
+
+  .portal h3{
+    font-family:'IBM Plex Serif', serif;
+    font-size:24px; font-weight:600; margin:0 0 8px;
+  }
+  .portal p{
+    color:var(--ink-soft); font-size:14.5px; line-height:1.55; margin:0 0 20px;
+  }
+  .portal-cta{
+    display:inline-flex; align-items:center; gap:7px;
+    font-weight:600; font-size:14.5px;
+  }
+  .portal--student .portal-cta{color:var(--gold-deep);}
+  .portal--admin .portal-cta{color:var(--ink);}
+  .portal-cta svg{transition:transform .18s ease;}
+  .portal:hover .portal-cta svg{transform:translateX(3px);}
+  .portal--student:hover{background:#FBF7EE;}
+  .portal--admin:hover{background:var(--paper-deep);}
+
+  /* ---------- Programs ---------- */
+  .programs{padding:60px 0 40px;}
+  .prog-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:24px; flex-wrap:wrap; gap:8px;
+  }
+  .prog-title{
+    font-family:'IBM Plex Serif', serif; font-weight:600; font-size:24px; margin:0;
+  }
+  .prog-session{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.08em;
+    color:var(--ink-faint); text-transform:uppercase;
+  }
+
+  .track-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--ink-faint);
+    margin:32px 0 12px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .track-label::after{content:''; flex:1; height:1px; background:var(--line);}
+
+  .row-list{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .row{
+    display:grid;
+    grid-template-columns:44px 1fr auto auto;
+    gap:20px;
+    align-items:center;
+    padding:18px 24px;
+    border-bottom:1px solid var(--line);
+    transition:background 0.15s ease;
+  }
+  .row:last-child{border-bottom:none;}
+  .row:hover{background:var(--paper-deep);}
+
+  .badge{
+    width:38px; height:38px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:11px;
+    letter-spacing:0.02em;
+  }
+  .badge--jee{background:var(--ink); color:var(--gold);}
+  .badge--cla{background:var(--paper-deep); color:var(--ink-soft); border:1px solid var(--line);}
+
+  .row-info h4{
+    margin:0 0 4px; font-size:16px; font-weight:600;
+  }
+  .row-meta{
+    font-size:13px; color:var(--ink-faint); line-height:1.5;
+  }
+  .row-meta .sched{color:var(--ink-soft);}
+  .row-meta .dot{margin:0 6px;}
+
+  .seats{
+    display:flex; align-items:center; gap:10px;
+    justify-self:end;
+  }
+  .seats-num{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft);
+    text-align:right; line-height:1.3;
+  }
+  .seats-num b{font-size:13.5px; color:var(--ink);}
+  .seats-tag{font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-faint);}
+
+  .price{
+    font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:16px;
+    justify-self:end; text-align:right; white-space:nowrap;
+  }
+  .price span{
+    display:block; font-family:'IBM Plex Sans', sans-serif; font-weight:400;
+    font-size:11px; color:var(--ink-faint); margin-top:2px;
+  }
+
+  /* ---------- Footer ---------- */
+  .footer{
+    margin-top:50px;
+    padding:28px 0 54px;
+    border-top:1px solid var(--line);
+    text-align:center;
+  }
+  .footer-mark{
+    display:inline-flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center;
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--ink-soft);
+  }
+  .footer-mark b{color:var(--ink); font-family:'IBM Plex Sans', sans-serif; font-weight:600;}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 760px){
+    .wrap{padding:0 16px;}
+    .stub{grid-template-columns:repeat(2,1fr);}
+    .stat:nth-child(2){border-right:none;}
+    .stat:nth-child(3), .stat:nth-child(4){border-top:1px solid var(--line);}
+    .admit-main{padding:34px 22px 30px;}
+    .portals{grid-template-columns:1fr;}
+    .portal-perf{left:0; right:0; top:50%; bottom:auto; width:auto; height:1px;
+      background-image:repeating-linear-gradient(to right, var(--line) 0 7px, transparent 7px 15px);
+    }
+    .portal-perf::before{left:-13px; top:-13px;}
+    .portal-perf::after{left:auto; right:-13px; top:-13px; bottom:auto;}
+    .portal:first-child{padding:26px 24px; border-bottom-left-radius:0;}
+    .portal:last-child{padding:26px 24px; border-bottom-left-radius:20px; border-bottom-right-radius:20px;}
+    .row{grid-template-columns:38px 1fr; row-gap:10px;}
+    .seats{grid-column:2; justify-self:start;}
+    .price{grid-column:2; justify-self:start; text-align:left;}
+    .price span{display:inline; margin:0 0 0 6px;}
+  }
+  @media (max-width: 480px){
+    .stub{grid-template-columns:1fr 1fr;}
+    .title{font-size:30px;}
+  }
+</style>
+</head>
+<body>
+
+  <!-- Hero Section / Admit Card Ticket -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="admit-card">
+
+        <!-- Stub Stats (Data loaded dynamically via API) -->
+        <div class="stub">
+          <div class="stat"><div class="stat-num" id="stat-enrolled">--</div><div class="stat-label">Active Students</div></div>
+          <div class="stat"><div class="stat-num" id="stat-alumni">--</div><div class="stat-label">Graduated Alumni</div></div>
+          <div class="stat"><div class="stat-num" id="stat-batches">--</div><div class="stat-label">Active Programs</div></div>
+          <div class="stat"><div class="stat-num" id="stat-completed">--</div><div class="stat-label">Concluded Courses</div></div>
+        </div>
+
+        <!-- Ticket Perforation -->
+        <div class="perf"></div>
+
+        <!-- Main Admit Card Body -->
+        <div class="admit-main">
+          <div class="eyebrow">Portal Gateway &bull; Session 2026–27</div>
+          <h1 class="title" id="hero-inst-name">Apex Coaching Institute</h1>
+          <p class="subtitle">Select your portal access to enter your dashboard</p>
+        </div>
+
+        <!-- Portals Split -->
+        <div class="portals">
+          <div class="portal-perf"></div>
+
+          <!-- Candidate Copy / Student Portal -->
+          <a id="link-student-portal" href="http://localhost:3001" target="_blank" class="portal portal--student">
+            <div class="portal-copy">Candidate Copy</div>
+            <div class="portal-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z" stroke="currentColor" stroke-width="1.8"/><path d="M4 20.5c1.6-3.6 4.6-5.5 8-5.5s6.4 1.9 8 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </div>
+            <h3>Student Portal</h3>
+            <p>View fee receipts, attendance calendars, and submit Razorpay or UTR payment proofs.</p>
+            <span class="portal-cta">Launch Portal
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </a>
+
+          <!-- Invigilator Copy / Admin Desk -->
+          <a id="link-admin-portal" href="http://localhost:3000" target="_blank" class="portal portal--admin">
+            <div class="portal-copy">Invigilator Copy</div>
+            <div class="portal-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 1 1 8 0v3" stroke="currentColor" stroke-width="1.8"/></svg>
+            </div>
+            <h3>Admin Desk</h3>
+            <p>Manage student batches, approve payment receipts, mark registers, and monitor collection.</p>
+            <span class="portal-cta">Launch Desk
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Programs Section -->
+  <section class="programs">
+    <div class="wrap">
+      <div class="prog-head">
+        <h2 class="prog-title">Academic Programs</h2>
+        <div class="prog-session">Session 2026–27</div>
+      </div>
+
+      <div class="track-label">JEE / NEET Track</div>
+      <div class="row-list" id="jee-list"></div>
+
+      <div class="track-label">School Board Track — Class 01–10</div>
+      <div class="row-list" id="cla-list"></div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="wrap">
+      <div class="footer-mark" id="footer-details">
+        <b id="footer-inst-name">Apex Coaching Institute</b>
+        <span>·</span>
+        <span id="footer-address">Plot 12, Knowledge Park III, Greater Noida, UP 201310</span>
+        <span>·</span>
+        <span id="footer-phone">+91 98765 43210</span>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Default Datasets
+let jee = [
+  {badge:'JEE', name:'Class 12 Advanced Science (IIT-JEE)', sched:'Physics (MWF), Mathematics (TTS)', faculty:'Prof. Ananya Krishnan', price:5000, filled:1, total:40},
+  {badge:'JEE', name:'Class 11 JEE/NEET Target Batch', sched:'Physics (MWF), Chemistry (TTS)', faculty:'Prof. Ananya Krishnan', price:4500, filled:1, total:40},
+];
+let cla = [
+  {badge:'CLA', name:'Class 10 Board Excellence & Apex Support', sched:'Maths (MWF), Physics & Chem (TTS)', faculty:'Dr. Vikram Chawla', price:4000, filled:3, total:40},
+  {badge:'CLA', name:'Class 09 Board Foundation & NTSE', sched:'Physics & Chem (MWF), Maths (TTS)', faculty:'Dr. Priya Malhotra', price:3500, filled:2, total:40},
+  {badge:'CLA', name:'Class 08 Pre-High School Olympiad', sched:'Physics & Chem (MWF), Maths (TTS)', faculty:'Prof. Anjali Verma', price:3000, filled:2, total:35},
+  {badge:'CLA', name:'Class 07 Science & Maths Scholars', sched:'Science (MWF), Maths (TTS)', faculty:'Prof. Rajesh Nair', price:2800, filled:2, total:30},
+  {badge:'CLA', name:'Class 06 Middle School Foundation', sched:'Physics & Chem (MWF), Maths (TTS)', faculty:'Prof. Anjali Verma', price:2500, filled:2, total:30},
+  {badge:'CLA', name:'Class 05 Middle Preparation', sched:'Maths (MWF), Science (TTS)', faculty:'Dr. Priyanka Sharma', price:2200, filled:2, total:30},
+  {badge:'CLA', name:'Class 04 Primary Excellence', sched:'Science (MWF), Social Studies (TTS)', faculty:'Mr. Amit Kumar', price:2000, filled:2, total:30},
+  {badge:'CLA', name:'Class 03 Elementary Champions', sched:'Maths (MWF), Science (TTS)', faculty:'Dr. Vikramaditya Rao', price:1800, filled:2, total:25},
+  {badge:'CLA', name:'Class 02 Junior Achievers', sched:'Maths (MWF), English & EVS (TTS)', faculty:'Ms. Sunita Rawat', price:1600, filled:2, total:25},
+  {badge:'CLA', name:'Class 01 Foundation Batch', sched:'Maths (MWF), English (TTS), Hindi (MWF)', faculty:'Ms. Sunita Rawat', price:1500, filled:2, total:25},
+];
+
+function ring(filled, total){
+  const pct = Math.min(1, Math.max(0, filled / total));
+  const r = 14, c = 2 * Math.PI * r;
+  const offset = c * (1 - pct);
+  const open = total - filled;
+  let color = 'var(--green)';
+  if(open <= 3) color = 'var(--rust)';
+  else if(open <= 10) color = 'var(--gold)';
+  return `<svg width="34" height="34" viewBox="0 0 34 34">
+    <circle cx="17" cy="17" r="${r}" fill="none" stroke="var(--line)" stroke-width="3"/>
+    <circle cx="17" cy="17" r="${r}" fill="none" stroke="${color}" stroke-width="3"
+      stroke-dasharray="${c}" stroke-dashoffset="${offset}" stroke-linecap="round"
+      transform="rotate(-90 17 17)"/>
+  </svg>`;
+}
+
+function renderRow(p){
+  return `
+  <div class="row">
+    <div class="badge badge--${p.badge.toLowerCase()}">${p.badge}</div>
+    <div class="row-info">
+      <h4>${p.name}</h4>
+      <div class="row-meta"><span class="sched">${p.sched}</span><span class="dot">·</span>${p.faculty}</div>
+    </div>
+    <div class="seats">
+      ${ring(p.filled, p.total)}
+      <div class="seats-num"><b>${p.filled}/${p.total}</b><br><span class="seats-tag">Seats</span></div>
+    </div>
+    <div class="price">₹${(p.price || 0).toLocaleString('en-IN')}<span>/month</span></div>
+  </div>`;
+}
+
+function renderLists() {
+  document.getElementById('jee-list').innerHTML = jee.map(renderRow).join('');
+  document.getElementById('cla-list').innerHTML = cla.map(renderRow).join('');
+}
+
+// Fetch live data from server API
+async function loadLiveData() {
+  try {
+    const res = await fetch('/api/v1/public/stats');
+    const result = await res.json();
+
+    if (result.success && result.data) {
+      const data = result.data;
+
+      // Bind ENV Institute Metadata & ENV Portal URIs
+      if (data.institute) {
+        document.getElementById('hero-inst-name').innerText = data.institute.name || 'Apex Coaching Institute';
+        document.getElementById('footer-inst-name').innerText = data.institute.name || 'Apex Coaching Institute';
+        document.getElementById('footer-address').innerText = data.institute.address || '';
+        document.getElementById('footer-phone').innerText = `${data.institute.email} · ${data.institute.phone}`;
+
+        // Bind ENV Portal Launch Links
+        if (data.institute.studentPortalUri) {
+          document.getElementById('link-student-portal').href = data.institute.studentPortalUri;
+        }
+        if (data.institute.adminPortalUri) {
+          document.getElementById('link-admin-portal').href = data.institute.adminPortalUri;
+        }
+      }
+
+      // Update Stub Stats
+      document.getElementById('stat-enrolled').innerText = (data.totalStudentsEnrolled || 23).toLocaleString('en-IN');
+      document.getElementById('stat-alumni').innerText = (data.totalAlumniGraduated || 2634).toLocaleString('en-IN') + '+';
+      document.getElementById('stat-batches').innerText = (data.activeBatchesCount || 12).toLocaleString('en-IN');
+      document.getElementById('stat-completed').innerText = (data.completedBatchesCount || 48).toLocaleString('en-IN');
+
+      // Populate Live Batches
+      if (data.batches && data.batches.length > 0) {
+        const jeeList = [];
+        const claList = [];
+
+        data.batches.forEach(b => {
+          const isJee = (b.name && (b.name.includes('JEE') || b.name.includes('NEET') || b.name.includes('IIT'))) ||
+                        (b.code && b.code.toUpperCase().includes('JEE'));
+
+          const item = {
+            badge: isJee ? 'JEE' : 'CLA',
+            name: b.name,
+            sched: b.schedule || 'MWF & TTS Schedules',
+            faculty: b.teacherId?.name || 'Senior Faculty',
+            price: b.feeAmount || 1800,
+            filled: (b.studentIds || []).length,
+            total: b.capacity || 30
+          };
+
+          if (isJee) {
+            jeeList.push(item);
+          } else {
+            claList.push(item);
+          }
+        });
+
+        if (jeeList.length > 0) jee = jeeList;
+        if (claList.length > 0) cla = claList;
+        renderLists();
+      }
+    }
+  } catch (err) {
+    console.warn(err);
+  }
+}
+
+renderLists();
+window.addEventListener('DOMContentLoaded', loadLiveData);
+</script>
+
+</body>
+</html>
