@@ -42,8 +42,14 @@ const authSlice = createSlice({
       state.token = action.payload.token;
       state.isAuthenticated = true;
       if (typeof window !== 'undefined') {
-        localStorage.setItem('apex_token', action.payload.token);
-        localStorage.setItem('apex_user', JSON.stringify(action.payload.user));
+        try {
+          localStorage.setItem('apex_token', action.payload.token);
+          localStorage.setItem('apex_user', JSON.stringify(action.payload.user));
+          const isSecure = window.location.protocol === 'https:';
+          document.cookie = `token=${action.payload.token}; path=/; max-age=604800; SameSite=Lax; ${isSecure ? 'Secure;' : ''}`;
+        } catch (e) {
+          console.error('Error writing token storage/cookie:', e);
+        }
       }
     },
     logoutUser: (state) => {
@@ -51,8 +57,14 @@ const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('apex_token');
-        localStorage.removeItem('apex_user');
+        try {
+          localStorage.removeItem('apex_token');
+          localStorage.removeItem('apex_user');
+          const isSecure = window.location.protocol === 'https:';
+          document.cookie = `token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; ${isSecure ? 'Secure;' : ''}`;
+        } catch (e) {
+          console.error('Error clearing token storage/cookie:', e);
+        }
       }
     },
   },

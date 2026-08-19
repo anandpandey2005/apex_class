@@ -1,2 +1,15 @@
-node_modules
+# Server gitignore
+node_modules/
+dist/
+.next/
+*.tsbuildinfo
+.vercel/
+
+# Environment Variables & Secret Files (Never commit to GitHub)
 .env
+.env.*
+!.env.example
+credentials.json
+*.pem
+*.key
+*.log

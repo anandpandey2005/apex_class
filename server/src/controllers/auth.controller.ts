@@ -28,11 +28,12 @@ const sendTokenResponse = (user: any, statusCode: number, res: Response, message
     permissions
   );
 
+  const isProduction = env.NODE_ENV === 'production';
   const cookieOptions = {
     expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax' as const,
+    secure: isProduction,
+    sameSite: isProduction ? ('none' as const) : ('lax' as const),
   };
 
   const userObj = user.toObject ? user.toObject() : { ...user };
@@ -86,9 +87,12 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 };
 
 export const logout = async (req: Request, res: Response) => {
+  const isProduction = env.NODE_ENV === 'production';
   res.cookie('token', 'none', {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? ('none' as const) : ('lax' as const),
   });
 
   return sendSuccess(res, 200, 'Logged out successfully', {});

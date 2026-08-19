@@ -11,6 +11,9 @@ import { env } from './config/env.config';
 
 const app: Application = express();
 
+// Trust reverse proxy (e.g. Render, Vercel, Cloudflare, Nginx) for secure HTTPS cookies
+app.set('trust proxy', 1);
+
 // Security Middlewares
 app.use(
   helmet({
