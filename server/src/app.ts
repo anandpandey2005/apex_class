@@ -17,10 +17,40 @@ app.use(
     contentSecurityPolicy: false,
   })
 );
+// Dynamic CORS configuration reading allowed portal URIs from ENV
+const allowedOrigins = [
+  env.STUDENT_PORTAL_URI,
+  env.ADMIN_PORTAL_URI,
+  env.CLIENT_URL,
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:5000',
+].map((u) => u?.replace(/\/$/, '')).filter(Boolean);
+
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+
+      const normalizedOrigin = origin.replace(/\/$/, '');
+
+      // Allow if origin matches env URIs, vercel deployments, or localhost
+      if (
+        allowedOrigins.includes(normalizedOrigin) ||
+        normalizedOrigin.endsWith('.vercel.app') ||
+        normalizedOrigin.includes('localhost') ||
+        env.NODE_ENV === 'development'
+      ) {
+        return callback(null, true);
+      }
+
+      // Default permissive return for custom domain deployments with credentials
+      return callback(null, true);
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Cookie'],
   })
 );
 
