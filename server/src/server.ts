@@ -8,7 +8,7 @@ const startServer = async () => {
 
   const server = app.listen(env.PORT, () => {
     console.log(`\n🚀 AcademyOps Server running in [${env.NODE_ENV}] mode on port ${env.PORT}`);
-    console.log(`🔗 API Base Endpoint: http://localhost:${env.PORT}/api/v1`);
+    console.log(`🔗 API Endpoint Active on Port: ${env.PORT}`);
     console.log(`🏫 Institute: ${env.INSTITUTE_NAME}\n`);
 
     // Start 14-minute self-ping keep-alive service

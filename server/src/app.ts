@@ -22,9 +22,6 @@ const allowedOrigins = [
   env.STUDENT_PORTAL_URI,
   env.ADMIN_PORTAL_URI,
   env.CLIENT_URL,
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:5000',
 ].map((u) => u?.replace(/\/$/, '')).filter(Boolean);
 
 app.use(
@@ -35,11 +32,10 @@ app.use(
 
       const normalizedOrigin = origin.replace(/\/$/, '');
 
-      // Allow if origin matches env URIs, vercel deployments, or localhost
+      // Allow if origin matches env URIs, vercel deployments, or dev environment
       if (
         allowedOrigins.includes(normalizedOrigin) ||
         normalizedOrigin.endsWith('.vercel.app') ||
-        normalizedOrigin.includes('localhost') ||
         env.NODE_ENV === 'development'
       ) {
         return callback(null, true);

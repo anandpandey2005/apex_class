@@ -9,7 +9,7 @@ const envSchema = z.object({
   MONGO_URI: z.string().default('mongodb://localhost:27017/tuition_management'),
   JWT_SECRET: z.string().min(8, 'JWT_SECRET must be at least 8 characters long'),
   JWT_EXPIRES_IN: z.string().default('7d'),
-  CLIENT_URL: z.string().default('http://localhost:3000'),
+  CLIENT_URL: z.string().optional().default(''),
   
   // Institute Metadata
   INSTITUTE_NAME: z.string().default('Apex Coaching Institute'),
@@ -17,9 +17,9 @@ const envSchema = z.object({
   INSTITUTE_PHONE: z.string().default('+91 98765 43210'),
   INSTITUTE_ADDRESS: z.string().default('Plot 12, Knowledge Park III, Greater Noida, UP, 201310'),
   INSTITUTE_LOGO_URL: z.string().default('/logo.png'),
-  STUDENT_PORTAL_URI: z.string().default('http://localhost:3001'),
-  ADMIN_PORTAL_URI: z.string().default('http://localhost:3000'),
-  SERVER_SELF_PING_URL: z.string().default('http://localhost:5000'),
+  STUDENT_PORTAL_URI: z.string().optional().default(''),
+  ADMIN_PORTAL_URI: z.string().optional().default(''),
+  SERVER_SELF_PING_URL: z.string().optional().default(''),
   PING_INTERVAL_MINUTES: z.string().default('14').transform((val) => parseInt(val, 10)),
 
   // Razorpay Gateway Settings

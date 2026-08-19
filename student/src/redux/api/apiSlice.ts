@@ -13,7 +13,7 @@ const getApiBaseUrl = () => {
     return cleanUrl.endsWith('/api/v1') ? cleanUrl : `${cleanUrl}/api/v1`;
   }
 
-  return 'http://localhost:5000/api/v1';
+  return '/api/v1';
 };
 
 const baseQuery = fetchBaseQuery({

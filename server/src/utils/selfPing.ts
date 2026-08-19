@@ -5,11 +5,15 @@ import { env } from '../config/env.config';
 export const startSelfPing = () => {
   const intervalMs = (env.PING_INTERVAL_MINUTES || 14) * 60 * 1000;
   
-  // Extract URLs to keep alive from ENV configuration
-  const urlsToPing = (env.SERVER_SELF_PING_URL || `http://localhost:${env.PORT}`)
+  const urlsToPing = (env.SERVER_SELF_PING_URL || '')
     .split(',')
     .map((url) => url.trim())
     .filter(Boolean);
+
+  if (urlsToPing.length === 0) {
+    console.log('⏱️  Self-Ping Keep-Alive service disabled (SERVER_SELF_PING_URL not configured)');
+    return null;
+  }
 
   const pingUrl = (targetUrl: string) => {
     try {
