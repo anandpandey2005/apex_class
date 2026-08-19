@@ -1,0 +1,9 @@
+# Monorepo Root gitignore
+node_modules/
+.next/
+dist/
+build/
+.env
+.env.local
+*.tsbuildinfo
+.vercel/
