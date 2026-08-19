@@ -12,69 +12,21 @@ The platform provides end-to-end management capabilities for academic institutio
 
 The system uses a distributed micro-frontend-inspired client architecture backed by a monolithic backend API engine.
 
-```mermaid
-graph TD
-    subgraph Frontend Applications
-        AdminApp["Admin & Staff Portal\n(Next.js 15 + Redux Toolkit)\nPort: 3000"]
-        StudentApp["Student & Parent Portal\n(Next.js 15 + Redux Toolkit)\nPort: 3001"]
-    end
+### Core System Topology
 
-    subgraph Backend API Engine
-        ExpressApp["Express API Server (TypeScript)\nPort: 5000"]
-        
-        subgraph Middleware Stack
-            AuthMw["JWT Auth & RBAC Middleware"]
-            SanitizeMw["Mongo Sanitize & Security Headers"]
-            RateLimitMw["Express Rate Limiter"]
-            ValMw["Zod Request Validator"]
-        end
+1. **Client Tier**:
+   * **Admin & Staff Portal (`admin`)**: Next.js 15 App Router running on Port 3000. Handles institute management, batch scheduling, fee verifications, user administration, and attendance tracking.
+   * **Student & Parent Portal (`student`)**: Next.js 15 App Router running on Port 3001. Handles student dashboard views, online/offline fee payments, digital PDF receipt downloads, and attendance history.
 
-        subgraph Core Controllers
-            AuthCtrl["Auth Controller"]
-            UserCtrl["User Controller"]
-            BatchCtrl["Batch Controller"]
-            FeeCtrl["Fee Controller"]
-            AttendCtrl["Attendance Controller"]
-            AnnounceCtrl["Announcement Controller"]
-        end
+2. **Backend API Tier (`server`)**:
+   * Express 5 API server running on Node.js/TypeScript (Port 5000).
+   * **Middleware Processing**: Rate Limiting, Mongo Input Sanitization, Helmet Security Headers, JWT Authentication, Role-Based Authorization, and Zod Request Validation.
+   * **Controllers**: Dedicated business logic modules for Auth, Users, Batches, Fees, Attendance, and Announcements.
+   * **Services**: PDF Receipt Generator Service using PDFKit and Multi-Channel Notification Service for Email/WhatsApp alerts.
 
-        subgraph System Services
-            PDFService["PDF Receipt Service\n(PDFKit)"]
-            NotifService["Notification Service\n(Email & WhatsApp)"]
-        end
-    end
-
-    subgraph Data & Payment Layer
-        MongoDB[(MongoDB Database)]
-        RazorpayGateway["Razorpay Payment Gateway"]
-    end
-
-    AdminApp -->|HTTPS / REST API| ExpressApp
-    StudentApp -->|HTTPS / REST API| ExpressApp
-
-    ExpressApp --> RateLimitMw
-    RateLimitMw --> SanitizeMw
-    SanitizeMw --> AuthMw
-    AuthMw --> ValMw
-
-    ValMw --> AuthCtrl
-    ValMw --> UserCtrl
-    ValMw --> BatchCtrl
-    ValMw --> FeeCtrl
-    ValMw --> AttendCtrl
-    ValMw --> AnnounceCtrl
-
-    FeeCtrl --> PDFService
-    FeeCtrl --> RazorpayGateway
-    AttendCtrl --> NotifService
-
-    AuthCtrl --> MongoDB
-    UserCtrl --> MongoDB
-    BatchCtrl --> MongoDB
-    FeeCtrl --> MongoDB
-    AttendCtrl --> MongoDB
-    AnnounceCtrl --> MongoDB
-```
+3. **Data & Integration Tier**:
+   * **Database**: MongoDB for persistent document storage.
+   * **Payment Gateway**: Razorpay REST API for payment order creation and cryptographic signature verification.
 
 ---
 
@@ -203,152 +155,44 @@ Users with the `ADMIN` or `TEACHER` roles can be granted dynamic, fine-grained p
 
 ## Core System Workflows
 
-### 1. Manual & Automated Payment Verification Flow
+### 1. Payment Processing & Verification Flow
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Student as Student / Parent
-    participant StudentUI as Student Portal (Client)
-    participant API as Express API Server
-    participant FeeCtrl as Fee Controller
-    participant AdminUI as Admin Portal (Client)
-    actor Admin as Admin / Director
-    participant PDFEngine as PDFKit Service
-    participant DB as MongoDB Database
-
-    Student->>StudentUI: Select Pending Monthly Fee Invoices
-    alt Method A: Online Payment Gateway (Razorpay)
-        StudentUI->>API: POST /api/v1/fees/:id/create-razorpay-order
-        API-->>StudentUI: Return Razorpay Order ID
-        StudentUI->>StudentUI: Complete Razorpay Checkout Modal
-        StudentUI->>API: POST /api/v1/fees/:id/verify-razorpay
-        API->>FeeCtrl: Validate HMAC Signature
-        FeeCtrl->>DB: Update Fee Status to 'PAID' & assign Receipt Number
-    else Method B: Offline Bank Transfer / UPI UTR Submission
-        StudentUI->>StudentUI: Upload Transaction Details (UTR, Bank, Time, Sender)
-        StudentUI->>API: POST /api/v1/fees/:id/submit-proof
-        API->>DB: Update Fee Status to 'UNDER_VERIFICATION'
-        Admin->>AdminUI: View Pending Verification Queue
-        AdminUI->>API: GET /api/v1/fees/pending-verifications
-        Admin->>AdminUI: Click 'Approve Payment'
-        AdminUI->>API: PATCH /api/v1/fees/:id/verify-payment (Action: APPROVE)
-        API->>FeeCtrl: Confirm Verification Audit
-        FeeCtrl->>DB: Update Fee Status to 'PAID' & assign Receipt Number
-    end
-
-    FeeCtrl->>PDFEngine: Call generateFeeReceiptPDF(FeeData)
-    PDFEngine-->>FeeCtrl: Stream PDF Buffer
-    FeeCtrl-->>StudentUI: Receipt Available for Download
-```
+1. **Invoice Selection**: Student or Parent selects a pending monthly fee invoice from the portal.
+2. **Payment Channel Selection**:
+   * **Online Gateway**: Request initiates a Razorpay Order ID. Upon completion of payment via checkout modal, the server validates the HMAC signature and updates invoice status to `PAID`.
+   * **Offline Proof Submission**: Student uploads transaction reference details (UTR number, bank name, payment time, sender name). Invoice status transitions to `UNDER_VERIFICATION`.
+3. **Admin Verification**: Administrative staff reviews the proof in the pending queue and approves the transaction, updating invoice status to `PAID`.
+4. **PDF Generation**: System calls PDFKit generator to compile a digital fee payment receipt with receipt number and audit proof details.
 
 ---
 
-### 2. Attendance Tracking & Automated Warning Workflow
+### 2. Attendance Logging & Threshold Notification Workflow
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Teacher as Teacher / Admin
-    participant AdminUI as Admin Portal
-    participant API as Express API Server
-    participant AttendCtrl as Attendance Controller
-    participant DB as MongoDB Database
-    participant NotifService as Notification Service
-
-    Teacher->>AdminUI: Select Date & Batch
-    AdminUI->>API: GET /api/v1/batches/:id/students
-    API-->>AdminUI: Return Student Roster
-    Teacher->>AdminUI: Mark Present / Absent / Late for each Student & Save
-    AdminUI->>API: POST /api/v1/attendance/mark-bulk
-    API->>AttendCtrl: Process Roster Array
-    AttendCtrl->>DB: Upsert Attendance Records (Unique Index: date + batchId + studentId)
-    
-    loop Check Each Student Attendance Percentage
-        AttendCtrl->>DB: Calculate 30-day Cumulative Attendance %
-        alt Attendance < 75% Threshold
-            AttendCtrl->>NotifService: Trigger notifyLowAttendance(student, email, phone, %)
-            NotifService->>NotifService: Format Email & WhatsApp Alert Payload
-            NotifService-->>API: Alert Dispatched Log Created
-        end
-    end
-    
-    API-->>AdminUI: Confirmation & Attendance Summary Response
-```
+1. **Roster Retrieval**: Teacher or Admin selects date and batch to view student enrollment roster.
+2. **Attendance Entry**: Staff submits bulk attendance records (Present, Absent, Late, Excused, Holiday).
+3. **Database Upsert**: Server records entries using a unique compound index (`date` + `batchId` + `studentId`) to prevent duplicates.
+4. **Threshold Evaluation**: Server computes 30-day cumulative attendance percentage for each student.
+5. **Notification Dispatch**: If attendance drops below the 75% institutional threshold, an automated alert payload is dispatched to student and parent email/WhatsApp.
 
 ---
 
-## Data Models & Schema Design
+## Data Models & Entity Relationships
 
-```mermaid
-erDiagram
-    USER ||--o{ BATCH : "teaches (Teacher)"
-    USER }|--|{ BATCH : "enrolled in (Student)"
-    USER ||--o| USER : "parent of (Parent -> Student)"
-    BATCH ||--o{ ATTENDANCE : "has records"
-    USER ||--o{ ATTENDANCE : "recorded for"
-    BATCH ||--o{ FEE : "invoiced for"
-    USER ||--o{ FEE : "billed to"
-    USER ||--o{ ANNOUNCEMENT : "authored by"
-    BATCH ||--o{ ANNOUNCEMENT : "targeted to"
-
-    USER {
-        ObjectId _id PK
-        string name
-        string email UK
-        string password
-        string role "DIRECTOR | ADMIN | TEACHER | STUDENT | PARENT"
-        stringArray permissions
-        string phone
-        ObjectIdArray batchIds FK
-        ObjectId parentStudentId FK
-    }
-
-    BATCH {
-        ObjectId _id PK
-        string name
-        string code UK
-        string subject
-        ObjectId teacherId FK
-        ObjectIdArray studentIds FK
-        string schedule
-        number feeAmount
-        number capacity
-        boolean isActive
-    }
-
-    FEE {
-        ObjectId _id PK
-        ObjectId studentId FK
-        ObjectId batchId FK
-        string month
-        number amountDue
-        number amountPaid
-        string status "PAID | PENDING | OVERDUE | PARTIAL | UNDER_VERIFICATION"
-        string paymentMethod "CASH | UPI | CARD | BANK_TRANSFER | RAZORPAY"
-        string transactionId
-        string receiptNumber UK
-        string verificationStatus "PENDING | APPROVED | REJECTED"
-    }
-
-    ATTENDANCE {
-        ObjectId _id PK
-        string date
-        ObjectId batchId FK
-        ObjectId studentId FK
-        string status "PRESENT | ABSENT | LATE | EXCUSED | HOLIDAY"
-        ObjectId markedBy FK
-    }
-
-    ANNOUNCEMENT {
-        ObjectId _id PK
-        string title
-        string message
-        string priority "URGENT | EXAM | GENERAL"
-        ObjectId targetBatchId FK
-        ObjectId authorId FK
-    }
-```
+* **User Model**:
+  * Represents system identities (Director, Admin, Teacher, Student, Parent).
+  * Contains authentication fields, contact info, permission array, linked batch references, and parent-student relationship mapping.
+* **Batch Model**:
+  * Represents academic classes.
+  * Contains batch code, subject list, assigned teacher reference, student roster array, schedule details, monthly fee amount, capacity, and active status.
+* **Fee Model**:
+  * Tracks monthly tuition fee invoices.
+  * Contains references to student and batch, month string, amount due/paid, status (`PAID`, `PENDING`, `OVERDUE`, `PARTIAL`, `UNDER_VERIFICATION`), transaction proof details (UTR, Bank, Sender Name), Razorpay payment references, and unique receipt number.
+* **Attendance Model**:
+  * Captures daily class presence.
+  * Contains date string (`YYYY-MM-DD`), batch reference, student reference, status (`PRESENT`, `ABSENT`, `LATE`, `EXCUSED`, `HOLIDAY`), remarks, and staff author reference (`markedBy`).
+* **Announcement Model**:
+  * Stores targeted broadcast messages.
+  * Contains title, message body, priority level (`URGENT`, `EXAM`, `GENERAL`), optional target batch ID(s), attachment URL, and author user reference.
 
 ---
 
@@ -448,7 +292,9 @@ npm install
 
 ### Step 2: Configure Environment Variables
 
-#### Backend Environment Configuration (`server/.env`)
+*Do not commit actual production credentials or secret keys to version control. Use `.env.example` files as reference templates.*
+
+#### Backend Environment Configuration Template (`server/.env`)
 
 Create a `.env` file inside the `server/` directory:
 
@@ -456,13 +302,13 @@ Create a `.env` file inside the `server/` directory:
 PORT=5000
 NODE_ENV=development
 MONGO_URI=mongodb://localhost:27017/tuition_management
-JWT_SECRET=super_secret_jwt_key_apex_coaching_2026
+JWT_SECRET=your_jwt_secret_key_minimum_8_chars
 JWT_EXPIRES_IN=7d
 
 # Institute Metadata
 INSTITUTE_NAME=Apex Coaching Institute
 INSTITUTE_EMAIL=contact@apexcoaching.com
-INSTITUTE_PHONE=+91 98765 43210
+INSTITUTE_PHONE=+91 8750309712
 INSTITUTE_ADDRESS=Plot 12, Knowledge Park III, Greater Noida, UP, 201310
 INSTITUTE_LOGO_URL=/logo.png
 
@@ -471,9 +317,9 @@ STUDENT_PORTAL_URI=http://localhost:3001
 ADMIN_PORTAL_URI=http://localhost:3000
 CLIENT_URL=http://localhost:3000
 
-# Razorpay Integration Credentials
-RAZORPAY_KEY_ID=rzp_test_ApexCoaching2026
-RAZORPAY_KEY_SECRET=apex_coaching_razorpay_secret_2026
+# Razorpay Gateway Credentials
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 ```
 
 #### Admin Portal Environment Configuration (`admin/.env.local`)
