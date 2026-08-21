@@ -6,6 +6,7 @@ export interface User {
   email: string;
   role: UserRole;
   phone?: string;
+  aadharNumber?: string;
   avatar?: string;
   batchIds?: any[];
   createdAt?: string;

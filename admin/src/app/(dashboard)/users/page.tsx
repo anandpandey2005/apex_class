@@ -1,16 +1,40 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
+import { Card, CardHeader, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Input } from '../../../components/ui/Input';
-import { UserPlus, Search, Trash2, Loader2, AlertCircle, ShieldCheck, Edit3, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  UserPlus,
+  Search,
+  Trash2,
+  Loader2,
+  AlertCircle,
+  ShieldCheck,
+  Edit3,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  CheckCircle2,
+  Clock,
+  Users,
+  GraduationCap,
+  Calendar,
+  X,
+  Filter,
+} from 'lucide-react';
 import { useAppDispatch } from '../../../redux/store';
 import { showToast } from '../../../redux/slices/toastSlice';
-import { useGetUsersQuery, useCreateUserMutation, useUpdateUserMutation, useDeleteUserMutation } from '../../../redux/api/userApi';
+import {
+  useGetUsersQuery,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+} from '../../../redux/api/userApi';
 import { useGetBatchesQuery } from '../../../redux/api/batchApi';
 import { User, UserRole, Batch } from '../../../types';
+import { formatCurrency } from '../../../lib/utils';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -26,14 +50,18 @@ const PERMISSION_OPTIONS = [
 export default function UserManagementPage() {
   const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState<'ALL' | 'DIRECTOR' | 'ADMIN' | 'TEACHER' | 'STUDENT'>('ALL');
+  const [duesFilter, setDuesFilter] = useState<'ALL' | 'PENDING' | 'CLEARED'>('ALL');
+  const [selectedBatchFilter, setSelectedBatchFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const { data, isLoading, isError, refetch } = useGetUsersQuery(
-    activeTab !== 'ALL' ? { role: activeTab } : {}
-  );
+  const { data, isLoading, isError, refetch } = useGetUsersQuery({
+    role: activeTab !== 'ALL' ? activeTab : undefined,
+    batchId: selectedBatchFilter !== 'ALL' ? selectedBatchFilter : undefined,
+    hasPendingDues: duesFilter === 'PENDING' ? 'true' : duesFilter === 'CLEARED' ? 'false' : undefined,
+  });
   const { data: batchesData } = useGetBatchesQuery();
 
   const [createUserMutation, { isLoading: isCreating }] = useCreateUserMutation();
@@ -43,11 +71,18 @@ export default function UserManagementPage() {
   const users: User[] = data?.data || [];
   const batches: Batch[] = batchesData?.data || [];
 
+  // Summary Metrics calculations
+  const totalStudents = users.filter((u) => u.role === 'STUDENT').length;
+  const studentsWithDues = users.filter((u) => u.role === 'STUDENT' && (u.feeSummary?.pendingDues || 0) > 0);
+  const totalDuesAmount = users.reduce((acc, curr) => acc + (curr.feeSummary?.pendingDues || 0), 0);
+  const totalCollectedAmount = users.reduce((acc, curr) => acc + (curr.feeSummary?.totalPaid || 0), 0);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     role: 'STUDENT' as UserRole,
     phone: '',
+    aadharNumber: '',
     password: 'password123',
     permissions: ['MARK_ATTENDANCE', 'BROADCAST_ANNOUNCEMENTS'] as string[],
     batchIds: [] as string[],
@@ -82,6 +117,7 @@ export default function UserManagementPage() {
       email: '',
       role: 'STUDENT',
       phone: '',
+      aadharNumber: '',
       password: 'password123',
       permissions: ['MARK_ATTENDANCE', 'BROADCAST_ANNOUNCEMENTS'],
       batchIds: [],
@@ -97,6 +133,7 @@ export default function UserManagementPage() {
       email: user.email,
       role: user.role,
       phone: user.phone || '',
+      aadharNumber: user.aadharNumber || '',
       password: '',
       permissions: user.permissions || [],
       batchIds: existingBatchIds,
@@ -134,6 +171,7 @@ export default function UserManagementPage() {
   };
 
   const handleDeleteUser = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete account for ${name}?`)) return;
     try {
       await deleteUserMutation(id).unwrap();
       dispatch(showToast({ message: `Removed ${name} from MongoDB directory`, type: 'info' }));
@@ -146,7 +184,8 @@ export default function UserManagementPage() {
     const matchesSearch =
       u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.phone?.includes(searchQuery);
+      u.phone?.includes(searchQuery) ||
+      (u.aadharNumber && u.aadharNumber.includes(searchQuery));
 
     return matchesSearch;
   });
@@ -159,26 +198,102 @@ export default function UserManagementPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, activeTab]);
+  }, [searchQuery, activeTab, duesFilter, selectedBatchFilter]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1>User & System Permission Directory</h1>
-          <p>Manage system roles (Admin, Faculty, Student), grant fine-grained permissions, and assign multiple tuition batches.</p>
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white shrink-0">
+              <Users className="w-4 h-4" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white mb-0">User & Academic Staff Directory</h1>
+              <p className="text-xs text-zinc-400 mb-0">
+                Manage roles (Admin, Faculty, Student), fee dues status, Aadhar card numbers, and batch enrollments.
+              </p>
+            </div>
+          </div>
         </div>
-        <Button variant="primary" onClick={handleOpenAddModal}>
-          <UserPlus className="w-4 h-4 mr-2" />
+        <Button variant="primary" size="sm" onClick={handleOpenAddModal}>
+          <UserPlus className="w-4 h-4 mr-1.5" />
           Assign Role & Add User
         </Button>
+      </div>
+
+      {/* Overview Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border-zinc-800 bg-zinc-950 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-zinc-400 font-semibold mb-1">
+                Total System Users
+              </p>
+              <h3 className="text-2xl font-black text-white font-mono mb-0">{users.length}</h3>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300">
+              <Users className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-[11px] text-zinc-500 mt-2 mb-0">Directors, Admins, Faculty, Students</p>
+        </Card>
+
+        <Card className="border-zinc-800 bg-zinc-950 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-zinc-400 font-semibold mb-1">
+                Enrolled Students
+              </p>
+              <h3 className="text-2xl font-black text-cyan-400 font-mono mb-0">{totalStudents}</h3>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400">
+              <GraduationCap className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-[11px] text-zinc-500 mt-2 mb-0">Active batch enrollments</p>
+        </Card>
+
+        <Card className="border-zinc-800 bg-zinc-950 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-zinc-400 font-semibold mb-1">
+                Students With Pending Dues
+              </p>
+              <h3 className="text-2xl font-black text-rose-400 font-mono mb-0">{studentsWithDues.length}</h3>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-rose-400">
+              <Clock className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-[11px] text-zinc-500 mt-2 mb-0">
+            Total Dues: <span className="text-rose-400 font-bold font-mono">{formatCurrency(totalDuesAmount)}</span>
+          </p>
+        </Card>
+
+        <Card className="border-zinc-800 bg-zinc-950 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-zinc-400 font-semibold mb-1">
+                Total Fees Cleared
+              </p>
+              <h3 className="text-2xl font-black text-emerald-400 font-mono mb-0">
+                {formatCurrency(totalCollectedAmount)}
+              </h3>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400">
+              <CreditCard className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-[11px] text-zinc-500 mt-2 mb-0">Cleared student receipts</p>
+        </Card>
       </div>
 
       {isLoading && (
         <Card className="border-zinc-800 p-8 text-center text-zinc-400">
           <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-white" />
-          <p className="text-xs mb-0">Fetching user directory from MongoDB database...</p>
+          <p className="text-xs mb-0">Fetching user directory & dues calculations from MongoDB database...</p>
         </Card>
       )}
 
@@ -192,11 +307,12 @@ export default function UserManagementPage() {
         </Card>
       )}
 
-      {/* Control Tabs & Search with Pagination */}
+      {/* Control Tabs & Search with Filtering */}
       {!isLoading && !isError && (
         <Card className="border-zinc-800 flex flex-col justify-between">
-          <CardHeader>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <CardHeader className="space-y-4">
+            {/* Top Filter Row: Role Tabs & Search */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex flex-wrap items-center gap-2">
                 {(['ALL', 'ADMIN', 'TEACHER', 'STUDENT'] as const).map((tab) => (
                   <Button
@@ -204,115 +320,235 @@ export default function UserManagementPage() {
                     variant={activeTab === tab ? 'primary' : 'outline'}
                     size="sm"
                     onClick={() => setActiveTab(tab)}
+                    className="text-xs"
                   >
                     {tab === 'ADMIN' ? 'ADMINS' : tab === 'TEACHER' ? 'FACULTY' : tab === 'STUDENT' ? 'STUDENTS' : 'ALL USERS'}
                   </Button>
                 ))}
               </div>
 
-              <div className="relative w-full md:w-64">
+              <div className="relative w-full lg:w-72">
                 <Search className="w-4 h-4 absolute left-3 top-3 text-zinc-500" />
                 <Input
-                  placeholder="Search by name, email or phone..."
+                  placeholder="Search by name, email, phone, UID..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
                 />
               </div>
             </div>
+
+            {/* Bottom Filter Row: Dues Status & Batch Filter */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-zinc-900 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-zinc-500 font-semibold flex items-center mr-1">
+                  <Filter className="w-3.5 h-3.5 mr-1" /> Fee Dues Filter:
+                </span>
+                <button
+                  onClick={() => setDuesFilter('ALL')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+                    duesFilter === 'ALL'
+                      ? 'bg-zinc-800 text-white border border-zinc-700'
+                      : 'text-zinc-400 hover:text-white bg-zinc-950 border border-zinc-900'
+                  }`}
+                >
+                  All Users
+                </button>
+                <button
+                  onClick={() => setDuesFilter('PENDING')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors flex items-center space-x-1.5 ${
+                    duesFilter === 'PENDING'
+                      ? 'bg-rose-950/80 text-rose-200 border border-rose-800'
+                      : 'text-rose-400 hover:text-rose-200 bg-zinc-950 border border-zinc-900'
+                  }`}
+                >
+                  <Clock className="w-3 h-3 text-rose-400" />
+                  <span>Pending Dues Only ({studentsWithDues.length})</span>
+                </button>
+                <button
+                  onClick={() => setDuesFilter('CLEARED')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors flex items-center space-x-1.5 ${
+                    duesFilter === 'CLEARED'
+                      ? 'bg-emerald-950/80 text-emerald-200 border border-emerald-800'
+                      : 'text-emerald-400 hover:text-emerald-200 bg-zinc-950 border border-zinc-900'
+                  }`}
+                >
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  <span>Fully Cleared</span>
+                </button>
+              </div>
+
+              {/* Batch Selector Filter */}
+              <div className="flex items-center space-x-2 text-xs text-zinc-400">
+                <span>Filter Batch:</span>
+                <select
+                  value={selectedBatchFilter}
+                  onChange={(e) => setSelectedBatchFilter(e.target.value)}
+                  className="h-8 px-2 rounded bg-zinc-900 border border-zinc-800 text-xs text-white focus:outline-none"
+                >
+                  <option value="ALL">All Batches</option>
+                  {batches.map((b) => (
+                    <option key={b._id} value={b._id}>
+                      {b.name} ({b.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </CardHeader>
 
           <CardContent>
             {filteredUsers.length === 0 ? (
-              <div className="py-8 text-center text-zinc-500 text-xs">
-                No user accounts matching filter query in MongoDB database.
+              <div className="py-12 text-center text-zinc-500 text-xs space-y-2">
+                <Users className="w-8 h-8 mx-auto text-zinc-700 mb-2" />
+                <p className="text-zinc-400 font-semibold mb-1">No user accounts matching query.</p>
+                <p className="text-[11px] text-zinc-600 mb-0">Try clearing filters or changing search terms.</p>
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto w-full">
-                  <table className="w-full text-left min-w-[750px]">
+                <div className="w-full overflow-x-auto rounded-lg border border-zinc-800 bg-black">
+                  <table className="w-full text-left min-w-[950px]">
                     <thead>
                       <tr>
-                        <th>User Name & Email</th>
-                        <th>System Role</th>
-                        <th>Permissions & Batches</th>
-                        <th>Phone Number</th>
-                        <th>Account Actions</th>
+                        <th className="no-break">User Name & Email</th>
+                        <th className="no-break">System Role</th>
+                        <th>Assigned Batches / Scope</th>
+                        <th className="no-break">Contact & Aadhar UID</th>
+                        <th className="no-break">Tuition Fee / Dues</th>
+                        <th className="no-break">Account Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedUsers.map((user) => (
-                        <tr key={user._id}>
-                          <td>
-                            <div className="font-bold text-white">{user.name}</div>
-                            <div className="text-xs text-zinc-500 font-mono">{user.email}</div>
-                          </td>
-                          <td>
-                            <Badge variant={user.role === 'DIRECTOR' || user.role === 'ADMIN' ? 'solid' : 'outline'}>
-                              {user.role}
-                            </Badge>
-                          </td>
-                          <td>
-                            {user.role === 'DIRECTOR' ? (
-                              <Badge variant="solid" className="text-[10px]">
-                                FULL DIRECTOR PERMISSIONS
+                      {paginatedUsers.map((user) => {
+                        const isStudent = user.role === 'STUDENT';
+                        const feeInfo = user.feeSummary;
+                        const hasDues = feeInfo && feeInfo.pendingDues > 0;
+
+                        return (
+                          <tr key={user._id} className="hover:bg-zinc-900/50 transition-colors">
+                            <td>
+                              <div className="font-bold text-white text-sm no-break">{user.name}</div>
+                              <div className="text-xs text-zinc-400 font-mono no-break">{user.email}</div>
+                            </td>
+
+                            <td>
+                              <Badge
+                                variant={
+                                  user.role === 'DIRECTOR'
+                                    ? 'solid'
+                                    : user.role === 'ADMIN'
+                                    ? 'solid'
+                                    : 'outline'
+                                }
+                                className="no-break"
+                              >
+                                {user.role}
                               </Badge>
-                            ) : user.role === 'STUDENT' ? (
-                              <div className="flex flex-wrap gap-1">
-                                {user.batchIds && user.batchIds.length > 0 ? (
-                                  user.batchIds.map((b: any, idx: number) => (
-                                    <Badge key={idx} variant="outline" className="text-[10px]">
-                                      {typeof b === 'object' ? b.code || b.name : 'Batch'}
-                                    </Badge>
-                                  ))
+                            </td>
+
+                            <td>
+                              {user.role === 'DIRECTOR' ? (
+                                <Badge variant="solid" className="text-[10px] no-break">
+                                  FULL SYSTEM ACCESS
+                                </Badge>
+                              ) : isStudent ? (
+                                <div className="flex flex-wrap gap-1 max-w-xs">
+                                  {user.batchIds && user.batchIds.length > 0 ? (
+                                    user.batchIds.map((b: any, idx: number) => (
+                                      <Badge key={idx} variant="outline" className="text-[10px] no-break">
+                                        {typeof b === 'object' ? b.code || b.name : 'Batch'}
+                                      </Badge>
+                                    ))
+                                  ) : (
+                                    <span className="text-[11px] text-zinc-500 italic no-break">No batches assigned</span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-[11px] text-zinc-400 font-mono no-break">
+                                  {user.permissions?.length
+                                    ? `${user.permissions.length} Permissions Granted`
+                                    : 'Standard Permissions'}
+                                </span>
+                              )}
+                            </td>
+
+                            <td>
+                              <div className="text-zinc-300 font-mono text-xs no-break">{user.phone || 'N/A'}</div>
+                              {user.aadharNumber ? (
+                                <div className="text-[10px] text-zinc-400 font-mono mt-0.5 no-break">
+                                  UID: <span className="text-zinc-200 font-bold bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">{user.aadharNumber}</span>
+                                </div>
+                              ) : (
+                                <div className="text-[10px] text-zinc-600 italic no-break">UID: Optional</div>
+                              )}
+                            </td>
+
+                            <td>
+                              {isStudent ? (
+                                hasDues ? (
+                                  <div className="no-break">
+                                    <div className="text-xs font-mono font-bold text-rose-400 flex items-center space-x-1">
+                                      <Clock className="w-3.5 h-3.5 text-rose-400 mr-1 inline shrink-0" />
+                                      <span>{formatCurrency(feeInfo.pendingDues)} DUE</span>
+                                    </div>
+                                    <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                                      Paid: {formatCurrency(feeInfo.totalPaid)}
+                                    </div>
+                                  </div>
+                                ) : feeInfo && feeInfo.totalPaid > 0 ? (
+                                  <div className="no-break">
+                                    <div className="text-xs font-mono font-bold text-emerald-400 flex items-center space-x-1">
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mr-1 inline shrink-0" />
+                                      <span>Cleared</span>
+                                    </div>
+                                    <div className="text-[10px] text-zinc-500 font-mono mt-0.5">
+                                      {formatCurrency(feeInfo.totalPaid)} Cleared
+                                    </div>
+                                  </div>
                                 ) : (
-                                  <span className="text-[11px] text-zinc-500 italic">No batches assigned</span>
-                                )}
+                                  <span className="text-[11px] text-zinc-500 no-break">No invoice created</span>
+                                )
+                              ) : (
+                                <span className="text-[11px] text-zinc-500 font-mono no-break">N/A (Staff)</span>
+                              )}
+                            </td>
+
+                            <td>
+                              <div className="flex items-center space-x-2 no-break">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleOpenEditModal(user)}
+                                  className="text-zinc-300 hover:text-white text-xs"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5 mr-1" />
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteUser(user._id, user.name)}
+                                  className="text-zinc-500 hover:text-rose-400"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
                               </div>
-                            ) : (
-                              <span className="text-[11px] text-zinc-400 font-mono">
-                                {user.permissions?.length
-                                  ? `${user.permissions.length} Permissions Granted`
-                                  : 'Standard Permissions'}
-                              </span>
-                            )}
-                          </td>
-                          <td className="text-zinc-400 font-mono text-xs">{user.phone || 'N/A'}</td>
-                          <td>
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleOpenEditModal(user)}
-                                className="text-zinc-300 hover:text-white"
-                              >
-                                <Edit3 className="w-3.5 h-3.5 mr-1" />
-                                Edit Permissions
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteUser(user._id, user.name)}
-                                className="text-zinc-400 hover:text-white"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
 
                 {/* Pagination Controls */}
-                <div className="mt-4 pt-3 flex items-center justify-between border-t border-zinc-900 text-xs">
-                  <span className="text-zinc-500">
+                <div className="mt-4 pt-3 flex flex-col sm:flex-row items-center justify-between border-t border-zinc-900 text-xs gap-3">
+                  <span className="text-zinc-500 no-break">
                     Page <strong className="text-white">{currentPage}</strong> of <strong className="text-white">{totalPages}</strong> (
                     {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)} of {filteredUsers.length} Users)
                   </span>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 no-break">
                     <Button
                       variant="outline"
                       size="sm"
@@ -322,6 +558,9 @@ export default function UserManagementPage() {
                       <ChevronLeft className="w-3.5 h-3.5 mr-1" />
                       Prev
                     </Button>
+                    <div className="px-3 py-1 bg-zinc-900 rounded font-mono text-xs text-white border border-zinc-800">
+                      {currentPage} / {totalPages}
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
@@ -343,11 +582,16 @@ export default function UserManagementPage() {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950 p-4 sm:p-6 text-white shadow-2xl space-y-4">
-            <div className="flex items-center space-x-2 border-b border-zinc-900 pb-3">
-              <ShieldCheck className="w-5 h-5 text-white" />
-              <h3 className="text-base font-bold text-white mb-0">
-                {editingUser ? `Edit Account: ${editingUser.name}` : 'Role & Permission Desk'}
-              </h3>
+            <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
+              <div className="flex items-center space-x-2">
+                <ShieldCheck className="w-5 h-5 text-white" />
+                <h3 className="text-base font-bold text-white mb-0">
+                  {editingUser ? `Edit Account: ${editingUser.name}` : 'Role & Permission Desk'}
+                </h3>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="text-zinc-500 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3 text-xs">
@@ -396,6 +640,17 @@ export default function UserManagementPage() {
                   placeholder="+91 98765 43210"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="text-zinc-400 block mb-1">
+                  Aadhar Card Number <span className="text-zinc-500 text-[11px] font-normal">(Optional - 12 Digits)</span>
+                </label>
+                <Input
+                  placeholder="e.g. 542012345678"
+                  value={formData.aadharNumber}
+                  onChange={(e) => setFormData({ ...formData, aadharNumber: e.target.value })}
                 />
               </div>
 
@@ -467,7 +722,7 @@ export default function UserManagementPage() {
                 </div>
               )}
 
-              <div className="flex justify-end space-x-2 pt-3">
+              <div className="flex justify-end space-x-2 pt-3 border-t border-zinc-900">
                 <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                   Cancel
                 </Button>

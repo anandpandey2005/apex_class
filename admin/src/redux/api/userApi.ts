@@ -5,13 +5,13 @@ export const userApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getUsers: builder.query<
       { success: boolean; data: User[] },
-      { role?: string; batchId?: string } | void
+      { role?: string; batchId?: string; hasPendingDues?: string } | void
     >({
       query: (params) => ({
         url: '/users',
         params: params || {},
       }),
-      providesTags: ['User'],
+      providesTags: ['User', 'Fee'],
     }),
     createUser: builder.mutation<
       { success: boolean; data: User },
@@ -21,6 +21,7 @@ export const userApi = apiSlice.injectEndpoints({
         password?: string;
         role: string;
         phone?: string;
+        aadharNumber?: string;
         batchIds?: string[];
         permissions?: string[];
       }

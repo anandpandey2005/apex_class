@@ -49,7 +49,7 @@ const sendTokenResponse = (user: any, statusCode: number, res: Response, message
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, email, password, role, phone, batchIds } = req.body;
+    const { name, email, password, role, phone, aadharNumber, batchIds } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -62,6 +62,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
       password,
       role: role || UserRole.STUDENT,
       phone,
+      aadharNumber,
       batchIds,
     });
 

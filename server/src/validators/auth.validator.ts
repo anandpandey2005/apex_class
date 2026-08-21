@@ -8,6 +8,7 @@ export const registerSchema = z.object({
     password: z.string().min(6, 'Password must be at least 6 characters'),
     role: z.nativeEnum(UserRole).default(UserRole.STUDENT),
     phone: z.string().optional(),
+    aadharNumber: z.string().optional(),
     batchIds: z.array(z.string()).optional(),
   }),
 });

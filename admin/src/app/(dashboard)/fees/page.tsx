@@ -266,62 +266,62 @@ export default function FeesDeskPage() {
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto w-full">
-                  <table className="w-full text-left min-w-[800px]">
+                <div className="w-full overflow-x-auto rounded-lg border border-zinc-800 bg-black">
+                  <table className="w-full text-left min-w-[950px]">
                     <thead>
                       <tr>
-                        <th>Student Profile</th>
-                        <th>Billing Month</th>
-                        <th>Amount Due</th>
-                        <th>Amount Paid</th>
-                        <th>Txn Proof / UTR</th>
-                        <th>Verification</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th className="no-break">Student Profile</th>
+                        <th className="no-break">Billing Month</th>
+                        <th className="no-break">Amount Due</th>
+                        <th className="no-break">Amount Paid</th>
+                        <th className="no-break">Txn Proof / UTR</th>
+                        <th className="no-break">Verification</th>
+                        <th className="no-break">Status</th>
+                        <th className="no-break">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {paginatedFees.map((fee: any) => (
                         <tr key={fee._id}>
                           <td>
-                            <div className="font-bold text-white">{fee.studentId?.name || 'Student'}</div>
-                            <div className="text-xs text-zinc-500">{fee.studentId?.email || 'N/A'}</div>
+                            <div className="font-bold text-white no-break">{fee.studentId?.name || 'Student'}</div>
+                            <div className="text-xs text-zinc-500 no-break">{fee.studentId?.email || 'N/A'}</div>
                           </td>
-                          <td className="text-zinc-300 font-medium">{fee.month}</td>
-                          <td className="font-mono text-zinc-300">{formatCurrency(fee.amountDue)}</td>
-                          <td className="font-mono font-bold text-white">{formatCurrency(fee.amountPaid)}</td>
+                          <td className="text-zinc-300 font-medium no-break">{fee.month}</td>
+                          <td className="font-mono text-zinc-300 no-break">{formatCurrency(fee.amountDue)}</td>
+                          <td className="font-mono font-bold text-white no-break">{formatCurrency(fee.amountPaid)}</td>
                           <td>
                             {fee.transactionId ? (
-                              <div className="text-xs">
+                              <div className="text-xs no-break">
                                 <span className="font-mono font-bold text-emerald-400 block">{fee.transactionId}</span>
                                 <span className="text-[10px] text-zinc-400 block">
                                   {fee.bankName || 'Bank'} ({fee.paymentMethod || 'UPI'})
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-xs text-zinc-600 italic">Unverified</span>
+                              <span className="text-xs text-zinc-600 italic no-break">Unverified</span>
                             )}
                           </td>
                           <td>
                             {fee.status === 'UNDER_VERIFICATION' || fee.verificationStatus === 'PENDING' ? (
-                              <Badge variant="outline" className="bg-amber-950/40 border-amber-700 text-amber-300 text-[10px] uppercase font-bold animate-pulse">
+                              <Badge variant="outline" className="bg-amber-950/40 border-amber-700 text-amber-300 text-[10px] uppercase font-bold animate-pulse no-break">
                                 UNDER VERIFICATION
                               </Badge>
                             ) : fee.verificationStatus === 'REJECTED' ? (
-                              <Badge variant="outline" className="bg-rose-950/40 border-rose-700 text-rose-300 text-[10px] uppercase font-bold">
+                              <Badge variant="outline" className="bg-rose-950/40 border-rose-700 text-rose-300 text-[10px] uppercase font-bold no-break">
                                 PROOF REJECTED
                               </Badge>
                             ) : (
-                              <span className="text-xs text-zinc-500 font-mono">Verified</span>
+                              <span className="text-xs text-zinc-500 font-mono no-break">Verified</span>
                             )}
                           </td>
                           <td>
-                            <Badge variant={fee.status === 'PAID' ? 'solid' : 'outline'}>
+                            <Badge variant={fee.status === 'PAID' ? 'solid' : 'outline'} className="no-break">
                               {fee.status}
                             </Badge>
                           </td>
                           <td>
-                            <div className="flex flex-wrap items-center gap-1.5 min-w-[220px]">
+                            <div className="flex items-center space-x-1.5 no-break">
                               {fee.status === 'UNDER_VERIFICATION' || fee.verificationStatus === 'PENDING' ? (
                                 <>
                                   <Button

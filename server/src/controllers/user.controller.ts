@@ -4,20 +4,75 @@ import { Batch } from '../models/Batch.model';
 import { sendSuccess } from '../utils/apiResponse';
 import { AppError } from '../utils/appError';
 
+import { Fee } from '../models/Fee.model';
+
 export const getUsers = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { role, batchId } = req.query;
+    const { role, batchId, hasPendingDues } = req.query;
 
     const filter: any = {};
     if (role) filter.role = role;
     if (batchId) filter.batchIds = batchId;
 
     const users = await User.find(filter)
-      .populate('batchIds', 'name code subject schedule scheduleType days')
+      .populate('batchIds', 'name code subject schedule scheduleType days feeAmount')
       .select('-password')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    return sendSuccess(res, 200, 'Users retrieved successfully', users);
+    const studentIds = users.filter((u) => u.role === UserRole.STUDENT).map((u) => u._id);
+
+    let feeMap = new Map();
+    if (studentIds.length > 0) {
+      const feeAggregates = await Fee.aggregate([
+        { $match: { studentId: { $in: studentIds } } },
+        {
+          $group: {
+            _id: '$studentId',
+            totalPaid: { $sum: '$amountPaid' },
+            totalDue: { $sum: '$amountDue' },
+            pendingDues: { $sum: { $subtract: ['$amountDue', '$amountPaid'] } },
+            pendingCount: {
+              $sum: {
+                $cond: [{ $in: ['$status', ['PENDING', 'OVERDUE', 'PARTIAL', 'UNDER_VERIFICATION']] }, 1, 0],
+              },
+            },
+          },
+        },
+      ]);
+
+      feeAggregates.forEach((f) => {
+        feeMap.set(f._id.toString(), {
+          totalPaid: f.totalPaid || 0,
+          totalDue: f.totalDue || 0,
+          pendingDues: Math.max(0, f.pendingDues || 0),
+          pendingCount: f.pendingCount || 0,
+          dueStatus: f.pendingDues > 0 ? 'PENDING' : (f.totalDue > 0 ? 'CLEARED' : 'NO_INVOICES'),
+        });
+      });
+    }
+
+    let enrichedUsers = users.map((u) => {
+      const feeInfo = feeMap.get(u._id.toString()) || {
+        totalPaid: 0,
+        totalDue: 0,
+        pendingDues: 0,
+        pendingCount: 0,
+        dueStatus: 'NO_INVOICES',
+      };
+      return {
+        ...u,
+        feeSummary: feeInfo,
+      };
+    });
+
+    if (hasPendingDues === 'true') {
+      enrichedUsers = enrichedUsers.filter((u) => u.feeSummary.pendingDues > 0);
+    } else if (hasPendingDues === 'false') {
+      enrichedUsers = enrichedUsers.filter((u) => u.feeSummary.pendingDues === 0);
+    }
+
+    return sendSuccess(res, 200, 'Users retrieved successfully', enrichedUsers);
   } catch (error) {
     next(error);
   }
@@ -25,7 +80,7 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction) 
 
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, email, password, role, phone, batchIds, permissions } = req.body;
+    const { name, email, password, role, phone, aadharNumber, batchIds, permissions } = req.body;
 
     const existing = await User.findOne({ email });
     if (existing) {
@@ -38,6 +93,7 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
       password: password || 'password123',
       role: role || UserRole.STUDENT,
       phone,
+      aadharNumber,
       batchIds: batchIds || [],
       permissions: permissions || [],
     });

@@ -26,6 +26,7 @@ export interface IUser extends Document {
   role: UserRole;
   permissions?: string[];
   phone?: string;
+  aadharNumber?: string;
   avatar?: string;
   batchIds?: mongoose.Types.ObjectId[];
   parentStudentId?: mongoose.Types.ObjectId;
@@ -47,6 +48,7 @@ const userSchema = new Schema<IUser>(
     },
     permissions: [{ type: String }],
     phone: { type: String, trim: true },
+    aadharNumber: { type: String, trim: true, sparse: true, index: true },
     avatar: { type: String, default: '/avatars/default.png' },
     batchIds: [{ type: Schema.Types.ObjectId, ref: 'Batch' }],
     parentStudentId: { type: Schema.Types.ObjectId, ref: 'User' },

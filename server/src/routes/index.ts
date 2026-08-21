@@ -5,6 +5,7 @@ import attendanceRoutes from './attendance.routes';
 import feeRoutes from './fee.routes';
 import announcementRoutes from './announcement.routes';
 import userRoutes from './user.routes';
+import alumniRoutes from './alumni.routes';
 import publicRoutes from './public.routes';
 
 const router = Router();
@@ -16,6 +17,7 @@ router.use('/attendance', attendanceRoutes);
 router.use('/fees', feeRoutes);
 router.use('/announcements', announcementRoutes);
 router.use('/users', userRoutes);
+router.use('/alumni', alumniRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {

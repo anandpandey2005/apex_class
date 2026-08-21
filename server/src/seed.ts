@@ -6,6 +6,7 @@ import { Batch } from './models/Batch.model';
 import { Attendance, AttendanceStatus } from './models/Attendance.model';
 import { Fee, FeeStatus } from './models/Fee.model';
 import { Announcement, AnnouncementPriority } from './models/Announcement.model';
+import { Alumni } from './models/Alumni.model';
 import { env } from './config/env.config';
 
 const seedDatabase = async () => {
@@ -19,6 +20,7 @@ const seedDatabase = async () => {
     await Attendance.deleteMany({});
     await Fee.deleteMany({});
     await Announcement.deleteMany({});
+    await Alumni.deleteMany({});
 
     console.log('🧹 Existing collections cleared.');
 
@@ -56,6 +58,7 @@ const seedDatabase = async () => {
         'BROADCAST_ANNOUNCEMENTS',
       ],
       phone: '+91 87503 09712',
+      aadharNumber: '875030971234',
     });
 
     credentialsList.director.push({
@@ -64,6 +67,7 @@ const seedDatabase = async () => {
       email: director.email,
       password: 'Director@2026',
       phone: director.phone,
+      aadharNumber: director.aadharNumber,
     });
 
     const adminMain = await User.create({
@@ -79,6 +83,7 @@ const seedDatabase = async () => {
         'BROADCAST_ANNOUNCEMENTS',
       ],
       phone: '+91 98765 00001',
+      aadharNumber: '987650000123',
     });
 
     const adminFinance = await User.create({
@@ -88,26 +93,27 @@ const seedDatabase = async () => {
       role: UserRole.ADMIN,
       permissions: ['MANAGE_FEES', 'MANAGE_USERS', 'BROADCAST_ANNOUNCEMENTS'],
       phone: '+91 98765 00004',
+      aadharNumber: '987650000456',
     });
 
     credentialsList.admins.push(
-      { role: 'ADMIN', name: adminMain.name, email: adminMain.email, password: 'Admin@2026', phone: adminMain.phone },
-      { role: 'ADMIN', name: adminFinance.name, email: adminFinance.email, password: 'Finance@2026', phone: adminFinance.phone }
+      { role: 'ADMIN', name: adminMain.name, email: adminMain.email, password: 'Admin@2026', phone: adminMain.phone, aadharNumber: adminMain.aadharNumber },
+      { role: 'ADMIN', name: adminFinance.name, email: adminFinance.email, password: 'Finance@2026', phone: adminFinance.phone, aadharNumber: adminFinance.aadharNumber }
     );
 
     // 2. CREATE 10 TEACHERS / FACULTY MEMBERS
     console.log('👩‍🏫 Creating 10 Faculty / Teacher Specialists...');
     const teacherData = [
-      { name: 'Dr. Vikramaditya Roy', email: 'vikram.maths@apexcoaching.com', phone: '+91 98765 00011', subject: 'Mathematics' },
-      { name: 'Prof. Ananya Verma', email: 'ananya.physics@apexcoaching.com', phone: '+91 98765 00012', subject: 'Physics' },
-      { name: 'Dr. Priyanka Sharma', email: 'priyanka.chem@apexcoaching.com', phone: '+91 98765 00013', subject: 'Chemistry' },
-      { name: 'Prof. Rajesh Nambiar', email: 'rajesh.bio@apexcoaching.com', phone: '+91 98765 00014', subject: 'Biology' },
-      { name: 'Ms. Sunita Rao', email: 'sunita.english@apexcoaching.com', phone: '+91 98765 00015', subject: 'English' },
-      { name: 'Mr. Amit Joshi', email: 'amit.social@apexcoaching.com', phone: '+91 98765 00016', subject: 'Social Studies' },
-      { name: 'Ms. Kavita Singh', email: 'kavita.hindi@apexcoaching.com', phone: '+91 98765 00017', subject: 'Hindi' },
-      { name: 'Dr. Vikram Chawla', email: 'vikram.science@apexcoaching.com', phone: '+91 98765 00018', subject: 'Integrated Science' },
-      { name: 'Dr. Priya Malhotra', email: 'priya.foundation@apexcoaching.com', phone: '+91 98765 00019', subject: 'NTSE Foundation' },
-      { name: 'Prof. Anjali Verma', email: 'anjali.olympiad@apexcoaching.com', phone: '+91 98765 00020', subject: 'Olympiad Specialist' },
+      { name: 'Dr. Vikramaditya Roy', email: 'vikram.maths@apexcoaching.com', phone: '+91 98765 00011', aadhar: '987650001111', subject: 'Mathematics' },
+      { name: 'Prof. Ananya Verma', email: 'ananya.physics@apexcoaching.com', phone: '+91 98765 00012', aadhar: '987650001212', subject: 'Physics' },
+      { name: 'Dr. Priyanka Sharma', email: 'priyanka.chem@apexcoaching.com', phone: '+91 98765 00013', aadhar: '987650001313', subject: 'Chemistry' },
+      { name: 'Prof. Rajesh Nambiar', email: 'rajesh.bio@apexcoaching.com', phone: '+91 98765 00014', aadhar: '987650001414', subject: 'Biology' },
+      { name: 'Ms. Sunita Rao', email: 'sunita.english@apexcoaching.com', phone: '+91 98765 00015', aadhar: '987650001515', subject: 'English' },
+      { name: 'Mr. Amit Joshi', email: 'amit.social@apexcoaching.com', phone: '+91 98765 00016', aadhar: '987650001616', subject: 'Social Studies' },
+      { name: 'Ms. Kavita Singh', email: 'kavita.hindi@apexcoaching.com', phone: '+91 98765 00017', aadhar: '987650001717', subject: 'Hindi' },
+      { name: 'Dr. Vikram Chawla', email: 'vikram.science@apexcoaching.com', phone: '+91 98765 00018', aadhar: '987650001818', subject: 'Integrated Science' },
+      { name: 'Dr. Priya Malhotra', email: 'priya.foundation@apexcoaching.com', phone: '+91 98765 00019', aadhar: '987650001919', subject: 'NTSE Foundation' },
+      { name: 'Prof. Anjali Verma', email: 'anjali.olympiad@apexcoaching.com', phone: '+91 98765 00020', aadhar: '987650002020', subject: 'Olympiad Specialist' },
     ];
 
     const teacherDocs: any[] = [];
@@ -119,6 +125,7 @@ const seedDatabase = async () => {
         role: UserRole.TEACHER,
         permissions: ['MARK_ATTENDANCE', 'BROADCAST_ANNOUNCEMENTS'],
         phone: t.phone,
+        aadharNumber: t.aadhar,
       });
       teacherDocs.push(doc);
 
@@ -129,6 +136,7 @@ const seedDatabase = async () => {
         password: 'Teacher@2026',
         subject: t.subject,
         phone: t.phone,
+        aadharNumber: t.aadhar,
       });
     }
 
@@ -182,6 +190,7 @@ const seedDatabase = async () => {
       const ln = lastNames[(i * 3) % lastNames.length];
       const batchIdx = (i - 1) % batchDocs.length;
       const targetBatch = batchDocs[batchIdx];
+      const aadharSample = `5420${String(i).padStart(8, '0')}`;
 
       const student = await User.create({
         name: `${fn} ${ln}`,
@@ -189,6 +198,7 @@ const seedDatabase = async () => {
         password: 'Student@2026',
         role: UserRole.STUDENT,
         phone: `+91 9811${String(i).padStart(6, '0')}`,
+        aadharNumber: aadharSample,
         batchIds: [targetBatch._id],
       });
 
@@ -207,32 +217,108 @@ const seedDatabase = async () => {
           assignedBatch: targetBatch.name,
           feeAmount: targetBatch.feeAmount,
           phone: student.phone,
+          aadharNumber: aadharSample,
         });
       }
     }
 
-    // 5. CREATE 2,000 GRADUATED ALUMNI RECORDS (INACTIVE / GRADUATED)
-    console.log('📜 Creating 2,000 Graduated Alumni Records...');
-    const alumniBatchSize = 500;
-    for (let batchOffset = 0; batchOffset < 2000; batchOffset += alumniBatchSize) {
-      const alumniBatch = [];
-      for (let j = 1; j <= alumniBatchSize; j++) {
-        const idNum = batchOffset + j;
-        const fn = firstNames[idNum % firstNames.length];
-        const ln = lastNames[(idNum * 7) % lastNames.length];
+    // 5. CREATE 50 RICH GRADUATED ALUMNI RECORDS WITH COMPLETE HISTORICAL RECEIPTS & MONTHLY DUES
+    console.log('📜 Creating rich Alumni Records with complete historical receipts, monthly dues, batch details & Aadhar numbers...');
+    const pastBatchNames = [
+      'Class 12 Advanced Science (IIT-JEE Batch 2025)',
+      'Class 12 Medical NEET Premier (Batch 2025)',
+      'Class 10 Board Excellence & Apex Super 30 (Batch 2024)',
+      'Class 12 Advanced Science (IIT-JEE Batch 2024)',
+      'Class 10 Board Foundation & NTSE (Batch 2023)',
+      'Class 12 Commerce & Economics Hub (Batch 2023)',
+    ];
 
-        alumniBatch.push({
-          name: `Alumni ${fn} ${ln}`,
-          email: `alumni${idNum}@apexalumni.org`,
-          password: 'Alumni@2026',
-          role: UserRole.STUDENT,
-          phone: `+91 9899${String(idNum).padStart(6, '0')}`,
-          createdAt: new Date('2024-05-15'),
-          updatedAt: new Date('2025-05-30'),
+    const colleges = [
+      'IIT Bombay (Computer Science)',
+      'IIT Delhi (Electrical Engineering)',
+      'AIIMS New Delhi (MBBS)',
+      'BITS Pilani (Electronics)',
+      'NIT Trichy (Mechanical)',
+      'IIM Ahmedabad (Integrated Management)',
+      'St. Stephen’s College Delhi',
+      'SRCC Delhi University',
+      'Microsoft India (Software Engineer)',
+      'Google India (Associate Product Manager)',
+    ];
+
+    const alumniStatuses: Array<'HIGHER_STUDIES' | 'EMPLOYED' | 'PREPARING' | 'ENTREPRENEUR'> = [
+      'HIGHER_STUDIES',
+      'HIGHER_STUDIES',
+      'EMPLOYED',
+      'HIGHER_STUDIES',
+      'PREPARING',
+      'ENTREPRENEUR',
+    ];
+
+    const alumniDocs = [];
+    const months = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
+
+    for (let k = 1; k <= 50; k++) {
+      const fn = firstNames[(k * 7) % firstNames.length];
+      const ln = lastNames[(k * 5) % lastNames.length];
+      const passingYear = 2025 - (k % 4); // 2025, 2024, 2023, 2022
+      const batchName = pastBatchNames[k % pastBatchNames.length];
+      const status = alumniStatuses[k % alumniStatuses.length];
+      const college = colleges[k % colleges.length];
+      const aadharNumber = `7845${String(k * 137).padStart(8, '0').slice(-8)}`;
+
+      const monthlyFee = 3500 + (k % 4) * 500;
+      const feeHistory: any[] = [];
+      let totalPaid = 0;
+      let totalPending = 0;
+
+      for (let m = 0; m < 10; m++) {
+        const monthName = `${months[m]} ${passingYear - 1}`;
+        const isPaid = m < 9 || k % 3 !== 0;
+        const amountPaid = isPaid ? monthlyFee : 0;
+        const feeStatus = isPaid ? 'PAID' : 'PENDING';
+        if (isPaid) totalPaid += amountPaid;
+        else totalPending += monthlyFee;
+
+        feeHistory.push({
+          month: monthName,
+          amountDue: monthlyFee,
+          amountPaid: amountPaid,
+          dueDate: `${passingYear - 1}-${String(m + 4 > 12 ? m - 8 : m + 4).padStart(2, '0')}-05`,
+          paidDate: isPaid ? `${passingYear - 1}-${String(m + 4 > 12 ? m - 8 : m + 4).padStart(2, '0')}-03` : undefined,
+          status: feeStatus,
+          receiptNumber: isPaid ? `RCP-${passingYear}-${String(k * 10 + m).padStart(5, '0')}` : undefined,
+          paymentMethod: isPaid ? (m % 2 === 0 ? 'UPI' : 'BANK_TRANSFER') : undefined,
+          transactionId: isPaid ? `TXN${passingYear}${k}${m}${Math.floor(1000 + Math.random() * 9000)}` : undefined,
+          notes: isPaid ? 'Full month tuition fee cleared' : 'Dues carried forward',
         });
       }
-      await User.insertMany(alumniBatch);
+
+      alumniDocs.push({
+        name: `${fn} ${ln}`,
+        email: `alumni.${fn.toLowerCase()}.${ln.toLowerCase()}${k}@apexalumni.org`,
+        phone: `+91 9711${String(k).padStart(6, '0')}`,
+        aadharNumber,
+        avatar: '/avatars/default.png',
+        batchName,
+        courseName: 'Physics, Chemistry, Mathematics & Biology',
+        passingYear,
+        graduationDate: `${passingYear}-05-25`,
+        feeHistory,
+        totalPaid,
+        totalPendingDues: totalPending,
+        attendanceSummary: {
+          totalClasses: 140,
+          attendedClasses: 125 + (k % 15),
+          percentage: Math.round(((125 + (k % 15)) / 140) * 100),
+        },
+        currentStatus: status,
+        organizationOrCollege: college,
+        notes: `Distinguished Alumni. Passed out in year ${passingYear} with excellent academic record.`,
+      });
     }
+
+    await Alumni.insertMany(alumniDocs);
 
     // 6. CREATE REAL PAYMENT / FEE RECORDS FOR ACTIVE STUDENTS
     console.log('💳 Generating Fee payment receipts for active students...');
@@ -310,8 +396,8 @@ const seedDatabase = async () => {
     console.log(` - 1 Director (director@apexcoaching.com / Director@2026)`);
     console.log(` - 2 Admins (admin@apexcoaching.com / Admin@2026, finance@apexcoaching.com / Finance@2026)`);
     console.log(` - 10 Faculty Specialists (teacher1@... / Teacher@2026)`);
-    console.log(` - 210 Enrolled Active Students across 12 Active Batches (student1@... to student210@... / Student@2026)`);
-    console.log(` - 2,000 Graduated Alumni Records (alumni1@... / Alumni@2026)`);
+    console.log(` - 210 Enrolled Active Students with Aadhar & Fees across 12 Active Batches`);
+    console.log(` - 50 Rich Graduated Alumni Records with full receipts, dues & batch histories in Alumni collection`);
     console.log(` - 210 Detailed Fee Receipts & Payment Records`);
     console.log(` 📂 Generated credentials JSON saved at:`);
     console.log(`   - ${jsonPathWorkspace}`);

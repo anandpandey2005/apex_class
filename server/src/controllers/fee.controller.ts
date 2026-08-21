@@ -541,7 +541,7 @@ export const downloadFeeReceiptPDF = async (req: Request, res: Response, next: N
     const { id } = req.params;
 
     const fee: any = await Fee.findById(id)
-      .populate('studentId', 'name email phone')
+      .populate('studentId', 'name email phone aadharNumber')
       .populate('batchId', 'name subject code');
 
     if (!fee) {
@@ -552,6 +552,8 @@ export const downloadFeeReceiptPDF = async (req: Request, res: Response, next: N
       receiptNumber: fee.receiptNumber || `RCP-${fee._id}`,
       studentName: fee.studentId?.name || 'Student',
       studentEmail: fee.studentId?.email || 'N/A',
+      studentPhone: fee.studentId?.phone,
+      aadharNumber: fee.studentId?.aadharNumber,
       batchName: fee.batchId?.name || 'Batch',
       subject: fee.batchId?.subject || 'Subject',
       month: fee.month,

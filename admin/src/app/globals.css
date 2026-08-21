@@ -106,3 +106,12 @@
     @apply hover:bg-zinc-900/60 transition-colors border-b border-zinc-900;
   }
 }
+
+@layer utilities {
+  .no-break {
+    white-space: nowrap !important;
+  }
+  .erp-container {
+    @apply w-full overflow-x-auto rounded-lg border border-zinc-800 bg-black;
+  }
+}

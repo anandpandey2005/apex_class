@@ -11,6 +11,7 @@ import {
   Megaphone,
   Building2,
   Users,
+  Award,
   X,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -21,6 +22,7 @@ const navItems = [
   { label: 'Fees & Receipts', href: '/fees', icon: CreditCard },
   { label: 'Batches & Timetable', href: '/batches', icon: GraduationCap },
   { label: 'User Directory', href: '/users', icon: Users },
+  { label: 'Alumni & Passed Out', href: '/alumni', icon: Award },
   { label: 'Notice Board', href: '/announcements', icon: Megaphone },
 ];
 

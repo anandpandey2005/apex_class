@@ -1,5 +1,13 @@
 export type UserRole = 'DIRECTOR' | 'ADMIN' | 'TEACHER' | 'STUDENT' | 'PARENT';
 
+export interface UserFeeSummary {
+  totalPaid: number;
+  totalDue: number;
+  pendingDues: number;
+  pendingCount: number;
+  dueStatus: 'PENDING' | 'CLEARED' | 'NO_INVOICES';
+}
+
 export interface User {
   _id: string;
   name: string;
@@ -7,8 +15,10 @@ export interface User {
   role: UserRole;
   permissions?: string[];
   phone?: string;
+  aadharNumber?: string;
   avatar?: string;
   batchIds?: any[];
+  feeSummary?: UserFeeSummary;
   createdAt?: string;
 }
 
@@ -102,3 +112,65 @@ export interface Announcement {
   authorId: User;
   createdAt: string;
 }
+
+export type AlumniStatus = 'HIGHER_STUDIES' | 'EMPLOYED' | 'PREPARING' | 'ENTREPRENEUR' | 'OTHER';
+
+export interface AlumniFeeRecord {
+  feeId?: string;
+  month: string;
+  amountDue: number;
+  amountPaid: number;
+  dueDate: string;
+  paidDate?: string;
+  status: 'PAID' | 'PENDING' | 'OVERDUE' | 'PARTIAL' | 'UNDER_VERIFICATION';
+  receiptNumber?: string;
+  paymentMethod?: string;
+  transactionId?: string;
+  notes?: string;
+}
+
+export interface AlumniAttendanceSummary {
+  totalClasses: number;
+  attendedClasses: number;
+  percentage: number;
+}
+
+export interface Alumni {
+  _id: string;
+  studentId?: string;
+  name: string;
+  email: string;
+  phone?: string;
+  aadharNumber?: string;
+  avatar?: string;
+  batchId?: any;
+  batchName: string;
+  courseName?: string;
+  passingYear: number;
+  graduationDate: string;
+  feeHistory: AlumniFeeRecord[];
+  totalPaid: number;
+  totalPendingDues: number;
+  attendanceSummary: AlumniAttendanceSummary;
+  currentStatus: AlumniStatus;
+  organizationOrCollege?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AlumniStats {
+  totalAlumni: number;
+  totalRevenue: number;
+  totalPendingDues: number;
+  yearBreakdown: { _id: number; count: number }[];
+  statusBreakdown: { _id: string; count: number }[];
+}
+
+export interface AlumniPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
